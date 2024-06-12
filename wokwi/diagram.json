@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "author": "Wilfried Klaas",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-nano", "id": "nano", "top": 4.8, "left": 153.1, "attrs": {} },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": -41.8,
+      "left": 48,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-tm1637-7segment",
+      "id": "sevseg1",
+      "top": -153.64,
+      "left": 26.23,
+      "attrs": { "color": "red" }
+    }
+  ],
+  "connections": [
+    [ "btn1:1.r", "nano:GND.2", "black", [ "h163.4", "v38.4" ] ],
+    [ "btn1:2.r", "nano:8", "green", [ "v0.2", "h96.2" ] ],
+    [ "sevseg1:CLK", "nano:2", "yellow", [ "h0" ] ],
+    [ "sevseg1:DIO", "nano:3", "green", [ "h0" ] ],
+    [ "sevseg1:VCC", "nano:5V", "red", [ "h153.6", "v201.6", "h-76.8" ] ],
+    [ "nano:GND.2", "sevseg1:GND", "black", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
