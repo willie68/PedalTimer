@@ -24,6 +24,7 @@
 const uint8_t TTD[] = {SEG_F | SEG_G | SEG_E | SEG_D};
 const uint8_t STD[] = {SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, SEG_F | SEG_G | SEG_E | SEG_D};
 const uint8_t CDD[] = {SEG_G | SEG_E | SEG_D, SEG_B | SEG_G | SEG_E | SEG_D | SEG_C};
+const uint8_t CPD[] = {SEG_G | SEG_E | SEG_D};
 
 // show the given time
 void showTime(long act);
@@ -35,6 +36,8 @@ void readCdm();
 void doSetup();
 // showing the given count down mode
 void showCdm(bool mode);
+// showing the count down time
+void showCdmTime(byte time);
 
 TM1637Display display = TM1637Display(CLK, DIO);
 Switch fs = Switch(FS);
@@ -45,6 +48,7 @@ bool started = false;
 // Taking the actual time from the eeprom and on first click starts the count down.
 // Default mode is taken from the eeprom, too
 bool cdm = false;
+byte cdmtime = 0;
 
 void setup()
 {
@@ -73,7 +77,14 @@ void setup()
   {
     doSetup();
   }
-  showTime(0);
+  if (cdm)
+  {
+    showCdmTime(cdmtime);
+  }
+  else
+  {
+    showTime(0);
+  }
   led(OFF);
 }
 
@@ -91,7 +102,7 @@ void loop()
     display.setColon(colon);
     led(OFF);
   }
-  if (fs.pushed())
+  if (fs.singleClick())
   {
     if (!started)
     {
@@ -113,8 +124,16 @@ void loop()
   }
   if (actual != old)
   {
-    showTime(actual);
     display.setColon(colon);
+    if (cdm)
+    {
+      byte value = cdmtime - byte(actual / 60);
+      showCdmTime(value);
+    }
+    else
+    {
+      showTime(actual);
+    }
     colon = !colon;
     old = actual;
   }
@@ -129,6 +148,12 @@ void showTime(long act)
   display.showNumberDec(sec, true, 2, 2);
 }
 
+void showCdmTime(byte time)
+{
+  display.setSegments(CPD, 1, 0);
+  display.showNumberDec(time, false, 3, 1);
+}
+
 void led(bool on)
 {
   digitalWrite(LED, on);
@@ -138,12 +163,12 @@ void readCdm()
 {
   byte value = EEPROM.read(0x00);
   cdm = (value > 0) && (value < 0xFF);
+  cdmtime = EEPROM.read(0x01);
 }
 
 void doSetup()
 {
   led(ON);
-
   // Set counter mode
   display.clear();
   display.setColon(ON);
@@ -157,9 +182,9 @@ void doSetup()
     if (fs.longPress())
     {
       cdm = value;
-      EEPROM.write(0, cdm ? 1 : 0);
+      EEPROM.write(0x00, cdm ? 1 : 0);
       end = true;
-    } 
+    }
     if (fs.singleClick())
     {
       value = !value;
@@ -171,7 +196,35 @@ void doSetup()
   display.clear();
   display.setSegments(TTD, 1, 0);
   showCdm(cdm);
-  delay(2000);
+  delay(1000);
+  // now if cdm is selected, let's adjust the count down time
+  led(ON);
+  end = false;
+  do
+  {
+    if (cdmtime > 240)
+    {
+      cdmtime = 0;
+      showCdmTime(cdmtime);
+    }
+    fs.poll();
+    if (fs.longPress())
+    {
+      EEPROM.write(0x01, cdmtime);
+      end = true;
+    }
+    if (fs.singleClick())
+    {
+      cdmtime += 5;
+      showCdmTime(cdmtime);
+    }
+  } while (!end);
+  led(OFF);
+  display.setColon(OFF);
+  display.clear();
+  display.setSegments(CPD, 1, 0);
+  showCdmTime(cdmtime);
+  delay(1000);
 }
 
 void showCdm(bool mode)
