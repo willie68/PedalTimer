@@ -6,64 +6,182 @@
 #include <arduino.h>
 #include <TM1637Display.h>
 #include "avdweb_Switch.h"
+#include <eeprom.h>
 
 // Version
 #define VS_MAJ 0
 #define VS_MIN 4
+// constants
+#define ON 1
+#define OFF 0
 // Display
 #define CLK 2
 #define DIO 3
+#define LED 13
 // Footswitch
 #define FS 8
 
+const uint8_t TTD[] = {SEG_F | SEG_G | SEG_E | SEG_D};
+const uint8_t STD[] = {SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, SEG_F | SEG_G | SEG_E | SEG_D};
+const uint8_t CDD[] = {SEG_G | SEG_E | SEG_D, SEG_B | SEG_G | SEG_E | SEG_D | SEG_C};
+
+// show the given time
 void showTime(long act);
+// lit the LED
+void led(bool on);
+// read the timer mode
+void readCdm();
+// do the timer setup
+void doSetup();
+// showing the given count down mode
+void showCdm(bool mode);
 
 TM1637Display display = TM1637Display(CLK, DIO);
-Switch fs = Switch(FS); 
+Switch fs = Switch(FS);
 
 long start = 0L;
-bool started = false; 
+bool started = false;
+// count down mode, if true the timer operate in count down mode.
+// Taking the actual time from the eeprom and on first click starts the count down.
+// Default mode is taken from the eeprom, too
+bool cdm = false;
 
-void setup() {
+void setup()
+{
+  pinMode(LED, OUTPUT);
   display.clear();
-  display.setBrightness(7); 
-  display.showNumberDec(VS_MAJ, false,1,1);
-  display.showNumberDec(VS_MIN, true,2,2);
+  display.setBrightness(7);
+  display.showNumberDec(VS_MAJ, false, 1, 1);
+  display.showNumberDec(VS_MIN, true, 2, 2);
   display.showNumberHexEx(0xF, 0xF, false, 1, 0);
-  delay(5 * 1000);
+  led(ON);
+  for (byte i = 0; i < 200; i++)
+  {
+    fs.poll();
+    delay(10);
+  }
+  readCdm();
+  display.clear();
+  display.setSegments(TTD, 1, 0);
+  showCdm(cdm);
+  for (byte i = 0; i < 200; i++)
+  {
+    fs.poll();
+    delay(10);
+  }
+  if (fs.on())
+  {
+    doSetup();
+  }
   showTime(0);
+  led(OFF);
 }
 
 long actual, old = 0;
+bool colon = false;
 
-void loop() {
+void loop()
+{
   fs.poll();
-  if (fs.longPress()) {
-      started = false;
-      actual = 0;
+  if (fs.longPress())
+  {
+    started = false;
+    actual = 0;
+    colon = false;
+    display.setColon(colon);
+    led(OFF);
   }
-  if (fs.pushed()) {
-    if (!started) {
+  if (fs.pushed())
+  {
+    if (!started)
+    {
       started = true;
       start = millis() - (actual * 1000L);
-      old = -1;        
-    } else {
+      old = -1;
+    }
+    else
+    {
       started = false;
     }
+    led(started);
+    colon = started;
+    display.setColon(colon);
   }
-  if (started) {
+  if (started)
+  {
     actual = (millis() - start) / 1000L;
   }
-  if (actual != old) {
+  if (actual != old)
+  {
     showTime(actual);
+    display.setColon(colon);
+    colon = !colon;
     old = actual;
   }
 }
 
-void showTime(long act) {
-    byte sec = act % 60;
-    byte min = (act - sec) / 60;
-    //display.clear();
-    display.showNumberDec(min, false, 2, 0);
-    display.showNumberDec(sec, true, 2, 2);
+void showTime(long act)
+{
+  byte sec = act % 60;
+  byte min = (act - sec) / 60;
+  // display.clear();
+  display.showNumberDec(min, false, 2, 0);
+  display.showNumberDec(sec, true, 2, 2);
+}
+
+void led(bool on)
+{
+  digitalWrite(LED, on);
+}
+
+void readCdm()
+{
+  byte value = EEPROM.read(0x00);
+  cdm = (value > 0) && (value < 0xFF);
+}
+
+void doSetup()
+{
+  led(ON);
+
+  // Set counter mode
+  display.clear();
+  display.setColon(ON);
+  display.setSegments(TTD, 1, 0);
+  showCdm(cdm);
+  bool end = false;
+  bool value = cdm;
+  do
+  {
+    fs.poll();
+    if (fs.longPress())
+    {
+      cdm = value;
+      EEPROM.write(0, cdm ? 1 : 0);
+      end = true;
+    } 
+    if (fs.singleClick())
+    {
+      value = !value;
+      showCdm(value);
+    }
+  } while (!end);
+  led(OFF);
+  display.setColon(OFF);
+  display.clear();
+  display.setSegments(TTD, 1, 0);
+  showCdm(cdm);
+  delay(2000);
+}
+
+void showCdm(bool mode)
+{
+  if (mode)
+  {
+    display.setSegments(CDD, 2, 2);
+  }
+  else
+  {
+    display.setSegments(STD, 2, 2);
+  }
 }
