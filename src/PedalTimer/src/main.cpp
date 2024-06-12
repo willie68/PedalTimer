@@ -27,7 +27,7 @@ const uint8_t CDD[] = {SEG_G | SEG_E | SEG_D, SEG_B | SEG_G | SEG_E | SEG_D | SE
 const uint8_t CPD[] = {SEG_G | SEG_E | SEG_D};
 
 // show the given time
-void showTime(long act);
+void showTime(int act);
 // lit the LED
 void led(bool on);
 // read the timer mode
@@ -36,8 +36,10 @@ void readCdm();
 void doSetup();
 // showing the given count down mode
 void showCdm(bool mode);
+// showing the count down time for setup
+void showCdmTimeSetup(int time);
 // showing the count down time
-void showCdmTime(byte time);
+void showCdmTime(int time);
 
 TM1637Display display = TM1637Display(CLK, DIO);
 Switch fs = Switch(FS);
@@ -77,9 +79,11 @@ void setup()
   {
     doSetup();
   }
+
+  display.clear();
   if (cdm)
   {
-    showCdmTime(cdmtime);
+    showCdmTimeSetup(cdmtime);
   }
   else
   {
@@ -127,7 +131,7 @@ void loop()
     display.setColon(colon);
     if (cdm)
     {
-      byte value = cdmtime - byte(actual / 60);
+      int value = (cdmtime * 60) - int(actual);
       showCdmTime(value);
     }
     else
@@ -139,7 +143,7 @@ void loop()
   }
 }
 
-void showTime(long act)
+void showTime(int act)
 {
   byte sec = act % 60;
   byte min = (act - sec) / 60;
@@ -148,10 +152,23 @@ void showTime(long act)
   display.showNumberDec(sec, true, 2, 2);
 }
 
-void showCdmTime(byte time)
+void showCdmTimeSetup(int time)
 {
-  display.setSegments(CPD, 1, 0);
   display.showNumberDec(time, false, 3, 1);
+}
+
+void showCdmTime(int time)
+{
+  if ((time <= 90 * 60) && (time > -9 * 60)) {
+    showTime(long(time));
+  } else {
+    int value = time / 60;
+    byte min = value % 60;
+    byte h = (value - min) / 60;
+    // display.clear();
+    display.showNumberDec(h, false, 2, 0);
+    display.showNumberDec(min, true, 2, 2);
+  }
 }
 
 void led(bool on)
@@ -199,13 +216,16 @@ void doSetup()
   delay(1000);
   // now if cdm is selected, let's adjust the count down time
   led(ON);
+  display.setColon(ON);
+  display.clear();
+  display.setSegments(CPD, 1, 0);
   end = false;
   do
   {
     if (cdmtime > 240)
     {
       cdmtime = 0;
-      showCdmTime(cdmtime);
+      showCdmTimeSetup(cdmtime);
     }
     fs.poll();
     if (fs.longPress())
@@ -216,14 +236,14 @@ void doSetup()
     if (fs.singleClick())
     {
       cdmtime += 5;
-      showCdmTime(cdmtime);
+      showCdmTimeSetup(cdmtime);
     }
   } while (!end);
   led(OFF);
   display.setColon(OFF);
   display.clear();
   display.setSegments(CPD, 1, 0);
-  showCdmTime(cdmtime);
+  showCdmTimeSetup(cdmtime);
   delay(1000);
 }
 
