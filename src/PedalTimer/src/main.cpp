@@ -51,6 +51,7 @@ bool started = false;
 // Default mode is taken from the eeprom, too
 bool cdm = false;
 byte cdmtime = 0;
+byte bright = 7;
 
 void setup()
 {
@@ -81,6 +82,7 @@ void setup()
   }
 
   display.clear();
+  display.setBrightness(bright);
   if (cdm)
   {
     showCdmTimeSetup(cdmtime);
@@ -159,9 +161,12 @@ void showCdmTimeSetup(int time)
 
 void showCdmTime(int time)
 {
-  if ((time <= 90 * 60) && (time > -9 * 60)) {
+  if ((time <= 90 * 60) && (time > -9 * 60))
+  {
     showTime(long(time));
-  } else {
+  }
+  else
+  {
     int value = time / 60;
     byte min = value % 60;
     byte h = (value - min) / 60;
@@ -181,12 +186,17 @@ void readCdm()
   byte value = EEPROM.read(0x00);
   cdm = (value > 0) && (value < 0xFF);
   cdmtime = EEPROM.read(0x01);
+  bright = EEPROM.read(0x02);
+  if (bright == 0xff)
+  {
+    bright = 4;
+  }
+  bright = bright % 7;
 }
 
-void doSetup()
+void setupMode()
 {
   led(ON);
-  // Set counter mode
   display.clear();
   display.setColon(ON);
   display.setSegments(TTD, 1, 0);
@@ -214,17 +224,20 @@ void doSetup()
   display.setSegments(TTD, 1, 0);
   showCdm(cdm);
   delay(1000);
-  // now if cdm is selected, let's adjust the count down time
+}
+
+void setupCDTime()
+{
   led(ON);
   display.setColon(ON);
   display.clear();
   display.setSegments(CPD, 1, 0);
-  end = false;
+  bool end = false;
   do
   {
-    if (cdmtime > 240)
+    if ((cdmtime > 240) || (cdmtime < 5))
     {
-      cdmtime = 0;
+      cdmtime = 5;
       showCdmTimeSetup(cdmtime);
     }
     fs.poll();
@@ -245,6 +258,53 @@ void doSetup()
   display.setSegments(CPD, 1, 0);
   showCdmTimeSetup(cdmtime);
   delay(1000);
+}
+
+void setupBrightness()
+{
+  led(ON);
+  display.setColon(ON);
+  display.clear();
+  display.showNumberHexEx(0xb, 0, false, 1, 0);
+  display.showNumberDec(bright, false, 1, 3);
+  bool end = false;
+  byte value = bright;
+  do
+  {
+    if (value > 7)
+    {
+      value = 0;
+      display.showNumberDec(value, false, 1, 3);
+    }
+    fs.poll();
+    if (fs.longPress())
+    {
+      bright = value;
+      EEPROM.write(0x02, value);
+      end = true;
+    }
+    if (fs.singleClick())
+    {
+      value++;
+      display.showNumberDec(value, false, 1, 3);
+    }
+  } while (!end);
+  led(OFF);
+  display.setColon(OFF);
+  display.clear();
+  display.showNumberHexEx(0xb, 0, false, 1, 0);
+  display.showNumberDec(bright, false, 1, 3);
+  delay(1000);
+}
+
+void doSetup()
+{
+  // setup display brightness
+  setupBrightness();
+  // Set counter mode
+  setupMode();
+  // now if cdm is selected, let's adjust the count down time
+  setupCDTime();
 }
 
 void showCdm(bool mode)
