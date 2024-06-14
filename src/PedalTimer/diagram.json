@@ -17,7 +17,8 @@
       "top": -153.64,
       "left": 26.23,
       "attrs": { "color": "red" }
-    }
+    },
+    { "type": "wokwi-led", "id": "led1", "top": -90, "left": 195.8, "attrs": { "color": "red" } }
   ],
   "connections": [
     [ "btn1:1.r", "nano:GND.2", "black", [ "h163.4", "v38.4" ] ],
@@ -25,7 +26,14 @@
     [ "sevseg1:CLK", "nano:2", "yellow", [ "h0" ] ],
     [ "sevseg1:DIO", "nano:3", "green", [ "h0" ] ],
     [ "sevseg1:VCC", "nano:5V", "red", [ "h153.6", "v201.6", "h-76.8" ] ],
-    [ "nano:GND.2", "sevseg1:GND", "black", [ "v0" ] ]
+    [ "nano:GND.2", "sevseg1:GND", "black", [ "v0" ] ],
+    [ "led1:C", "btn1:1.r", "black", [ "v0" ] ],
+    [ "led1:A", "nano:7", "green", [ "v0" ] ]
   ],
-  "dependencies": {}
+  "dependencies": {},
+  "serialMonitor": {
+    "display": "always",
+    "newline": "lf",
+    "convertEol": false
+  }
 }

@@ -8,9 +8,11 @@
 #include "avdweb_Switch.h"
 #include <eeprom.h>
 
+// #define debug
+
 // Version
 #define VS_MAJ 0
-#define VS_MIN 4
+#define VS_MIN 5
 // constants
 #define ON 1
 #define OFF 0
@@ -18,6 +20,7 @@
 #define CLK 2
 #define DIO 3
 #define LED 13
+#define ALARMLED 7
 // Footswitch
 #define FS 8
 
@@ -25,11 +28,16 @@ const uint8_t TTD[] = {SEG_F | SEG_G | SEG_E | SEG_D};
 const uint8_t STD[] = {SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, SEG_F | SEG_G | SEG_E | SEG_D};
 const uint8_t CDD[] = {SEG_G | SEG_E | SEG_D, SEG_B | SEG_G | SEG_E | SEG_D | SEG_C};
 const uint8_t CPD[] = {SEG_G | SEG_E | SEG_D};
+const uint8_t MND[] = {SEG_G};
 
 // show the given time
 void showTime(int act);
 // lit the LED
 void led(bool on);
+// toggle the LED output
+void toggled();
+// checking if the LED is on
+bool isLED();
 // read the timer mode
 void readCdm();
 // do the timer setup
@@ -37,9 +45,11 @@ void doSetup();
 // showing the given count down mode
 void showCdm(bool mode);
 // showing the count down time for setup
-void showCdmTimeSetup(int time);
+void setupCdmTimeShow(int time);
 // showing the count down time
 void showCdmTime(int time);
+// write out the config via serial
+void outputConfig();
 
 TM1637Display display = TM1637Display(CLK, DIO);
 Switch fs = Switch(FS);
@@ -49,13 +59,21 @@ bool started = false;
 // count down mode, if true the timer operate in count down mode.
 // Taking the actual time from the eeprom and on first click starts the count down.
 // Default mode is taken from the eeprom, too
-bool cdm = false;
-byte cdmtime = 0;
-byte bright = 7;
+bool cdm = true;
+byte cdmtime = 45;
+byte bright = 4;
+// time to start the warning, blinking LED,
+// in CD mode: time in minutes, when cd time is lower than this, the alarm starts
+// in ST mode: time in minutes, when time is greater than this, the alarm starts
+byte warningtime = 4;
+bool alarm = false;
+unsigned long alarmblk = 0;
 
 void setup()
 {
+  Serial.begin(115200);
   pinMode(LED, OUTPUT);
+  pinMode(ALARMLED, OUTPUT);
   display.clear();
   display.setBrightness(7);
   display.showNumberDec(VS_MAJ, false, 1, 1);
@@ -81,11 +99,12 @@ void setup()
     doSetup();
   }
 
+  outputConfig();
   display.clear();
   display.setBrightness(bright);
   if (cdm)
   {
-    showCdmTimeSetup(cdmtime);
+    showCdmTime(0);
   }
   else
   {
@@ -94,7 +113,7 @@ void setup()
   led(OFF);
 }
 
-long actual, old = 0;
+long actualSec, oldSec = 0;
 bool colon = false;
 
 void loop()
@@ -103,7 +122,7 @@ void loop()
   if (fs.longPress())
   {
     started = false;
-    actual = 0;
+    actualSec = 0;
     colon = false;
     display.setColon(colon);
     led(OFF);
@@ -113,8 +132,8 @@ void loop()
     if (!started)
     {
       started = true;
-      start = millis() - (actual * 1000L);
-      old = -1;
+      start = millis() - (actualSec * 1000L);
+      oldSec = -1;
     }
     else
     {
@@ -126,41 +145,68 @@ void loop()
   }
   if (started)
   {
-    actual = (millis() - start) / 1000L;
+    actualSec = (millis() - start) / 1000L;
+    if (warningtime > 0)
+    {
+      if (cdm)
+      {
+        alarm = (int(cdmtime) * 60) - int(actualSec) < (int(warningtime) * 60);
+      }
+      else
+      {
+        alarm = actualSec > (warningtime * 60L);
+      }
+    }
+    digitalWrite(ALARMLED, 0);
+    if (alarm)
+    {
+      if (alarmblk < millis())
+      {
+        alarmblk = millis() + 500;
+        toggled();
+        display.setBrightness(7);
+      }
+      digitalWrite(ALARMLED, 1);
+    }
   }
-  if (actual != old)
+  if (actualSec != oldSec)
   {
     display.setColon(colon);
     if (cdm)
     {
-      int value = (cdmtime * 60) - int(actual);
-      showCdmTime(value);
+      showCdmTime(actualSec);
     }
     else
     {
-      showTime(actual);
+      showTime(actualSec);
     }
     colon = !colon;
-    old = actual;
+    oldSec = actualSec;
   }
 }
 
 void showTime(int act)
 {
-  byte sec = act % 60;
-  byte min = (act - sec) / 60;
-  // display.clear();
-  display.showNumberDec(min, false, 2, 0);
+  bool neg = act < 0;
+  int t = abs(act);
+  byte sec = t % 60;
+  byte min = (t - sec) / 60;
+  if (neg)
+  {
+    display.setSegments(MND, 1, 0);
+    display.showNumberDec(min, false, 1, 1);
+  }
+  else
+  {
+    display.showNumberDec(min, false, 2, 0);
+  }
   display.showNumberDec(sec, true, 2, 2);
 }
 
-void showCdmTimeSetup(int time)
+void showCdmTime(int ct)
 {
-  display.showNumberDec(time, false, 3, 1);
-}
-
-void showCdmTime(int time)
-{
+  int time = (cdmtime * 60) - int(ct);
+  Serial.println(time);
   if ((time <= 90 * 60) && (time > -9 * 60))
   {
     showTime(long(time));
@@ -168,11 +214,8 @@ void showCdmTime(int time)
   else
   {
     int value = time / 60;
-    byte min = value % 60;
-    byte h = (value - min) / 60;
     // display.clear();
-    display.showNumberDec(h, false, 2, 0);
-    display.showNumberDec(min, true, 2, 2);
+    display.showNumberDec(value, false, 4, 0);
   }
 }
 
@@ -181,17 +224,41 @@ void led(bool on)
   digitalWrite(LED, on);
 }
 
+void toggled()
+{
+  digitalWrite(LED, !digitalRead(LED));
+}
+
+bool isLED()
+{
+  return digitalRead(LED);
+}
+
 void readCdm()
 {
+#ifdef debug
+  cdm = true;
+#else
   byte value = EEPROM.read(0x00);
   cdm = (value > 0) && (value < 0xFF);
-  cdmtime = EEPROM.read(0x01);
+  value = EEPROM.read(0x01);
+  if (value <= 240)
+  {
+    cdmtime = value;
+  }
   bright = EEPROM.read(0x02);
   if (bright == 0xff)
   {
     bright = 4;
   }
   bright = bright % 7;
+  warningtime = EEPROM.read(0x03);
+  if (warningtime == 0xff)
+  {
+    warningtime = 9;
+  }
+  warningtime = warningtime % 16;
+#endif
 }
 
 void setupMode()
@@ -226,38 +293,50 @@ void setupMode()
   delay(1000);
 }
 
+void setupCdmTimeShow(int time)
+{
+  display.setSegments(CPD, 1, 0);
+  display.showNumberDec(time, true, 3, 1);
+}
+
 void setupCDTime()
 {
   led(ON);
-  display.setColon(ON);
+  display.setColon(OFF);
   display.clear();
-  display.setSegments(CPD, 1, 0);
+  setupCdmTimeShow(cdmtime);
   bool end = false;
+  byte value = cdmtime;
   do
   {
-    if ((cdmtime > 240) || (cdmtime < 5))
+    if ((value > 240) || (value < 5))
     {
-      cdmtime = 5;
-      showCdmTimeSetup(cdmtime);
+      value = 5;
+      setupCdmTimeShow(value);
     }
     fs.poll();
     if (fs.longPress())
     {
-      EEPROM.write(0x01, cdmtime);
+      EEPROM.write(0x01, value);
+      cdmtime = value;
       end = true;
     }
     if (fs.singleClick())
     {
-      cdmtime += 5;
-      showCdmTimeSetup(cdmtime);
+      value += 5;
+      setupCdmTimeShow(value);
     }
   } while (!end);
   led(OFF);
-  display.setColon(OFF);
   display.clear();
-  display.setSegments(CPD, 1, 0);
-  showCdmTimeSetup(cdmtime);
+  setupCdmTimeShow(cdmtime);
   delay(1000);
+}
+
+void setupBrigthnessShow(byte value)
+{
+  display.showNumberHexEx(0xb, 0, false, 1, 0);
+  display.showNumberDec(value, false, 1, 3);
 }
 
 void setupBrightness()
@@ -265,8 +344,7 @@ void setupBrightness()
   led(ON);
   display.setColon(ON);
   display.clear();
-  display.showNumberHexEx(0xb, 0, false, 1, 0);
-  display.showNumberDec(bright, false, 1, 3);
+  setupBrigthnessShow(bright);
   bool end = false;
   byte value = bright;
   do
@@ -274,7 +352,7 @@ void setupBrightness()
     if (value > 7)
     {
       value = 0;
-      display.showNumberDec(value, false, 1, 3);
+      setupBrigthnessShow(value);
     }
     fs.poll();
     if (fs.longPress())
@@ -286,14 +364,54 @@ void setupBrightness()
     if (fs.singleClick())
     {
       value++;
-      display.showNumberDec(value, false, 1, 3);
+      setupBrigthnessShow(value);
     }
   } while (!end);
   led(OFF);
   display.setColon(OFF);
   display.clear();
-  display.showNumberHexEx(0xb, 0, false, 1, 0);
-  display.showNumberDec(bright, false, 1, 3);
+  setupBrigthnessShow(bright);
+  delay(1000);
+}
+
+void setupWarningTimeShow(byte value)
+{
+  display.showNumberHexEx(0xa, 0, false, 1, 0);
+  display.showNumberDec(value, true, 2, 2);
+}
+
+void setupWarningTime()
+{
+  led(ON);
+  display.setColon(ON);
+  display.clear();
+  setupWarningTimeShow(warningtime);
+  bool end = false;
+  byte value = warningtime;
+  do
+  {
+    if (value > 15)
+    {
+      value = 0;
+      setupWarningTimeShow(value);
+    }
+    fs.poll();
+    if (fs.longPress())
+    {
+      warningtime = value;
+      EEPROM.write(0x03, value);
+      end = true;
+    }
+    if (fs.singleClick())
+    {
+      value++;
+      setupWarningTimeShow(value);
+    }
+  } while (!end);
+  led(OFF);
+  display.setColon(OFF);
+  display.clear();
+  setupWarningTimeShow(warningtime);
   delay(1000);
 }
 
@@ -305,6 +423,8 @@ void doSetup()
   setupMode();
   // now if cdm is selected, let's adjust the count down time
   setupCDTime();
+  // setup the warning time
+  setupWarningTime();
 }
 
 void showCdm(bool mode)
@@ -317,4 +437,16 @@ void showCdm(bool mode)
   {
     display.setSegments(STD, 2, 2);
   }
+}
+
+void outputConfig()
+{
+  Serial.print("Bright: ");
+  Serial.println(bright);
+  Serial.print("Mode: ");
+  Serial.println(cdm ? "countdown" : "stoptime");
+  Serial.print("Warning time: ");
+  Serial.println(warningtime);
+  Serial.print("Countdown time: ");
+  Serial.println(cdmtime);
 }

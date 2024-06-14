@@ -2,3 +2,4 @@
 version = 1
 firmware = '.pio/build/nanoatmega328/firmware.hex'
 elf = '.pio/build/nanoatmega328/firmware.elf'
+rfc2217ServerPort = 4000
