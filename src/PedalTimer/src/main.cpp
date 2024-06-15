@@ -7,6 +7,7 @@
 #include <TM1637Display.h>
 #include "avdweb_Switch.h"
 #include <eeprom.h>
+#include <Adafruit_NeoPixel.h>
 
 // #define debug
 
@@ -19,8 +20,6 @@
 // Display
 #define CLK 2
 #define DIO 3
-#define LED 13
-#define ALARMLED 7
 // Footswitch
 #define FS 8
 
@@ -51,11 +50,17 @@ void showCdmTime(int time);
 // write out the config via serial
 void outputConfig();
 
+Adafruit_NeoPixel pixel(1, 5, NEO_RGB + NEO_KHZ800);
 TM1637Display display = TM1637Display(CLK, DIO);
 Switch fs = Switch(FS);
 
+const uint32_t RED = pixel.Color(0xff, 0, 0);
+const uint32_t BLUE = pixel.Color(0, 0, 0xff);
+const uint32_t GREEN = pixel.Color(0, 0xff, 0);
+
 long start = 0L;
 bool started = false;
+bool ledOn = false;
 // count down mode, if true the timer operate in count down mode.
 // Taking the actual time from the eeprom and on first click starts the count down.
 // Default mode is taken from the eeprom, too
@@ -69,11 +74,19 @@ byte warningtime = 4;
 bool alarm = false;
 unsigned long alarmblk = 0;
 
+// actual color of led
+uint32_t color = GREEN;
+
 void setup()
 {
   Serial.begin(115200);
-  pinMode(LED, OUTPUT);
-  pinMode(ALARMLED, OUTPUT);
+
+  pixel.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
+  pixel.setBrightness(7*8);
+  pixel.show();
+
+  color = BLUE;
+
   display.clear();
   display.setBrightness(7);
   display.showNumberDec(VS_MAJ, false, 1, 1);
@@ -100,8 +113,10 @@ void setup()
   }
 
   outputConfig();
+  color = GREEN;
   display.clear();
   display.setBrightness(bright);
+  pixel.setBrightness(bright * 8);
   if (cdm)
   {
     showCdmTime(0);
@@ -157,17 +172,19 @@ void loop()
         alarm = actualSec > (warningtime * 60L);
       }
     }
-    digitalWrite(ALARMLED, 0);
     if (alarm)
     {
+      color = RED;
       if (alarmblk < millis())
       {
         alarmblk = millis() + 500;
         toggled();
         display.setBrightness(7);
       }
-      digitalWrite(ALARMLED, 1);
+    } else {
+      color = GREEN;
     }
+    led(started);
   }
   if (actualSec != oldSec)
   {
@@ -221,17 +238,27 @@ void showCdmTime(int ct)
 
 void led(bool on)
 {
-  digitalWrite(LED, on);
+  if (!on)
+  {
+    pixel.clear();
+    pixel.show();
+  }
+  else
+  {
+    pixel.setPixelColor(0, color);
+    pixel.show();
+  }
+  ledOn = on;
 }
 
 void toggled()
 {
-  digitalWrite(LED, !digitalRead(LED));
+  led(!isLED());
 }
 
 bool isLED()
 {
-  return digitalRead(LED);
+  return ledOn;
 }
 
 void readCdm()
@@ -417,6 +444,7 @@ void setupWarningTime()
 
 void doSetup()
 {
+  color = BLUE;
   // setup display brightness
   setupBrightness();
   // Set counter mode

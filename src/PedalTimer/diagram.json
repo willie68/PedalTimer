@@ -18,7 +18,7 @@
       "left": 26.23,
       "attrs": { "color": "red" }
     },
-    { "type": "wokwi-led", "id": "led1", "top": -90, "left": 195.8, "attrs": { "color": "red" } }
+    { "type": "wokwi-neopixel", "id": "rgb1", "top": -70.7, "left": 306.2, "attrs": {} }
   ],
   "connections": [
     [ "btn1:1.r", "nano:GND.2", "black", [ "h163.4", "v38.4" ] ],
@@ -27,13 +27,10 @@
     [ "sevseg1:DIO", "nano:3", "green", [ "h0" ] ],
     [ "sevseg1:VCC", "nano:5V", "red", [ "h153.6", "v201.6", "h-76.8" ] ],
     [ "nano:GND.2", "sevseg1:GND", "black", [ "v0" ] ],
-    [ "led1:C", "btn1:1.r", "black", [ "v0" ] ],
-    [ "led1:A", "nano:7", "green", [ "v0" ] ]
+    [ "rgb1:VSS", "nano:GND.2", "black", [ "h8.8", "v27.9", "h-57.6" ] ],
+    [ "rgb1:VDD", "nano:5V", "red", [ "h-9.6", "v-19.2", "h57.6", "v182.4", "h-76.8" ] ],
+    [ "rgb1:DIN", "nano:5", "violet", [ "h18.4", "v48", "h-105.6" ] ]
   ],
-  "dependencies": {},
-  "serialMonitor": {
-    "display": "always",
-    "newline": "lf",
-    "convertEol": false
-  }
+  "serialMonitor": { "display": "always", "newline": "lf", "convertEol": false },
+  "dependencies": {}
 }
