@@ -13,7 +13,7 @@
 
 // Version
 #define VS_MAJ 0
-#define VS_MIN 5
+#define VS_MIN 6
 // constants
 #define ON 1
 #define OFF 0
