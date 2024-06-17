@@ -77,27 +77,39 @@ unsigned long alarmblk = 0;
 // actual color of led
 uint32_t color = GREEN;
 
-void setup()
+void setupPixel() 
 {
-  Serial.begin(115200);
-
   pixel.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
   pixel.setBrightness(7*8);
   pixel.show();
 
   color = BLUE;
+}
 
+void showVersion()
+{
   display.clear();
   display.setBrightness(7);
   display.showNumberDec(VS_MAJ, false, 1, 1);
   display.showNumberDec(VS_MIN, true, 2, 2);
   display.showNumberHexEx(0xF, 0xF, false, 1, 0);
+
   led(ON);
   for (byte i = 0; i < 200; i++)
   {
     fs.poll();
     delay(10);
   }
+}
+
+void setup()
+{
+  Serial.begin(115200);
+
+  setupPixel();
+
+  showVersion();
+
   readCdm();
   display.clear();
   display.setSegments(TTD, 1, 0);
@@ -117,14 +129,7 @@ void setup()
   display.clear();
   display.setBrightness(bright);
   pixel.setBrightness(bright * 8);
-  if (cdm)
-  {
-    showCdmTime(0);
-  }
-  else
-  {
-    showTime(0);
-  }
+  cdm ? showCdmTime(0) :showTime(0);
   led(OFF);
 }
 

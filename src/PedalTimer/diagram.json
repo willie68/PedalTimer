@@ -7,25 +7,26 @@
     {
       "type": "wokwi-pushbutton",
       "id": "btn1",
-      "top": -41.8,
-      "left": 48,
+      "top": 9.7,
+      "left": 63.9,
+      "rotate": 270,
       "attrs": { "color": "green" }
     },
     {
       "type": "wokwi-tm1637-7segment",
       "id": "sevseg1",
-      "top": -153.64,
+      "top": -134.44,
       "left": 26.23,
       "attrs": { "color": "red" }
     },
     { "type": "wokwi-neopixel", "id": "rgb1", "top": -70.7, "left": 306.2, "attrs": {} }
   ],
   "connections": [
-    [ "btn1:1.r", "nano:GND.2", "black", [ "h163.4", "v38.4" ] ],
-    [ "btn1:2.r", "nano:8", "green", [ "v0.2", "h96.2" ] ],
+    [ "btn1:1.r", "nano:GND.2", "black", [ "v-29", "h192" ] ],
+    [ "btn1:2.r", "nano:8", "green", [ "v-19.4", "h105.8" ] ],
     [ "sevseg1:CLK", "nano:2", "yellow", [ "h0" ] ],
     [ "sevseg1:DIO", "nano:3", "green", [ "h0" ] ],
-    [ "sevseg1:VCC", "nano:5V", "red", [ "h153.6", "v201.6", "h-76.8" ] ],
+    [ "sevseg1:VCC", "nano:5V", "red", [ "h153.6", "v182.4", "h-76.8" ] ],
     [ "nano:GND.2", "sevseg1:GND", "black", [ "v0" ] ],
     [ "rgb1:VSS", "nano:GND.2", "black", [ "h8.8", "v27.9", "h-57.6" ] ],
     [ "rgb1:VDD", "nano:5V", "red", [ "h-9.6", "v-19.2", "h57.6", "v182.4", "h-76.8" ] ],
