@@ -6,6 +6,7 @@ What you need:
 - TM1637 Display with 4x Digit and double point
 - a small SPST switch for manual press
 - 3d printed case
+
 for 9V power
 - lumberg DC Buchse
 - 9V/5V converter
