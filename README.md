@@ -46,7 +46,9 @@ The display always shows the remaining time in countdown mode.
 
 ![](images/image009.jpg)
 
-Start/Stop/Reset works the same as in ST mode. When running the LED will lit up green and the colon in the middle are blinking. If the remaining time > 90 min, the display is showing the `hours:minutes`. 
+Start/Stop/Reset works the same as in ST mode. When running the LED will lit up green and the colon in the middle are blinking. If the remaining time > 90 min, the display is showing the `hours:minutes`. If you under run the time, this is indicated by an minus in front of the time. 
+
+![](images/image010.jpg)
 
 ## Configuration Mode
 
@@ -81,4 +83,5 @@ You can setup a warning time from 0..15 min. 0 disables the warning.
 - St mode: the LED will lit up in RED (instead of green) if the elapsed time is longer than the warning time.
 - cd mode: the LED will lit up in RED (instead of green) if the remaining time is shorter than the warning time.
 
-2024 WK-Music 
+<u>2024 WK-Music</u> 
+
