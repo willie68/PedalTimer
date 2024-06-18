@@ -1,5 +1,8 @@
 # PedalTimer
+
 A small clock for your guitar pedal board, that counts up or down to measure the duration of songs or to time your performance when you are limited on time.
+
+The github project site: https://github.com/willie68/PedalTimer
 
 For schematic see wokwi project: https://wokwi.com/projects/400030668740998145
 
@@ -78,3 +81,4 @@ You can setup a warning time from 0..15 min. 0 disables the warning.
 - St mode: the LED will lit up in RED (instead of green) if the elapsed time is longer than the warning time.
 - cd mode: the LED will lit up in RED (instead of green) if the remaining time is shorter than the warning time.
 
+2024 WK-Music 
