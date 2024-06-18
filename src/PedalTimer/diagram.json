@@ -19,18 +19,22 @@
       "left": 26.23,
       "attrs": { "color": "red" }
     },
-    { "type": "wokwi-neopixel", "id": "rgb1", "top": -70.7, "left": 306.2, "attrs": {} }
+    { "type": "wokwi-neopixel", "id": "rgb1", "top": -70.7, "left": 306.2, "attrs": {} },
+    { "type": "wokwi-junction", "id": "j1", "top": -33.6, "left": 273.6, "attrs": {} },
+    { "type": "wokwi-junction", "id": "j2", "top": -91.2, "left": 292.8, "attrs": {} }
   ],
   "connections": [
-    [ "btn1:1.r", "nano:GND.2", "black", [ "v-29", "h192" ] ],
     [ "btn1:2.r", "nano:8", "green", [ "v-19.4", "h105.8" ] ],
     [ "sevseg1:CLK", "nano:2", "yellow", [ "h0" ] ],
     [ "sevseg1:DIO", "nano:3", "green", [ "h0" ] ],
-    [ "sevseg1:VCC", "nano:5V", "red", [ "h153.6", "v182.4", "h-76.8" ] ],
-    [ "nano:GND.2", "sevseg1:GND", "black", [ "v0" ] ],
-    [ "rgb1:VSS", "nano:GND.2", "black", [ "h8.8", "v27.9", "h-57.6" ] ],
-    [ "rgb1:VDD", "nano:5V", "red", [ "h-9.6", "v-19.2", "h57.6", "v182.4", "h-76.8" ] ],
-    [ "rgb1:DIN", "nano:5", "violet", [ "h18.4", "v48", "h-105.6" ] ]
+    [ "rgb1:DIN", "nano:5", "violet", [ "h18.4", "v48", "h-105.6" ] ],
+    [ "nano:GND.2", "j1:J", "black", [ "v0" ] ],
+    [ "rgb1:VSS", "j1:J", "black", [ "v0" ] ],
+    [ "sevseg1:GND", "j1:J", "black", [ "h0" ] ],
+    [ "btn1:1.r", "j1:J", "black", [ "v0" ] ],
+    [ "sevseg1:VCC", "j2:J", "red", [ "h0" ] ],
+    [ "j2:J", "nano:5V", "red", [ "h57.6", "v182.4", "h-76.8" ] ],
+    [ "j2:J", "rgb1:VDD", "red", [ "v0" ] ]
   ],
   "serialMonitor": { "display": "always", "newline": "lf", "convertEol": false },
   "dependencies": {}
