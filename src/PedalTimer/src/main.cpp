@@ -13,7 +13,7 @@
 
 // Version
 #define VS_MAJ 0
-#define VS_MIN 6
+#define VS_MIN 7
 // constants
 #define ON 1
 #define OFF 0
@@ -28,6 +28,7 @@ const uint8_t STD[] = {SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, SEG_F | SEG_G | SE
 const uint8_t CDD[] = {SEG_G | SEG_E | SEG_D, SEG_B | SEG_G | SEG_E | SEG_D | SEG_C};
 const uint8_t CPD[] = {SEG_G | SEG_E | SEG_D};
 const uint8_t MND[] = {SEG_G};
+const uint8_t MED[] = {SEG_A | SEG_F | SEG_E | SEG_B | SEG_C, SEG_A | SEG_F | SEG_G | SEG_E | SEG_D, SEG_G | SEG_E | SEG_C, SEG_C | SEG_E | SEG_D, };
 
 // show the given time
 void showTime(int act);
@@ -76,6 +77,7 @@ unsigned long alarmblk = 0;
 
 // actual color of led
 uint32_t color = GREEN;
+bool endsetup = false;
 
 void setupPixel() 
 {
@@ -102,6 +104,16 @@ void showVersion()
   }
 }
 
+void afterSetup() {
+  outputConfig();
+  color = GREEN;
+  display.clear();
+  display.setBrightness(bright);
+  pixel.setBrightness(bright * 8);
+  cdm ? showCdmTime(0) :showTime(0);
+  led(OFF);
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -124,13 +136,7 @@ void setup()
     doSetup();
   }
 
-  outputConfig();
-  color = GREEN;
-  display.clear();
-  display.setBrightness(bright);
-  pixel.setBrightness(bright * 8);
-  cdm ? showCdmTime(0) :showTime(0);
-  led(OFF);
+  afterSetup();
 }
 
 long actualSec, oldSec = 0;
@@ -139,6 +145,12 @@ bool colon = false;
 void loop()
 {
   fs.poll();
+  if (fs.doubleClick()) {
+    if (!started) {
+       doSetup();
+       afterSetup();
+    }
+  }
   if (fs.longPress())
   {
     started = false;
@@ -305,6 +317,10 @@ void setupMode()
   do
   {
     fs.poll();
+    if (fs.doubleClick()) {
+      endsetup = true;
+      return;
+    }
     if (fs.longPress())
     {
       cdm = value;
@@ -347,6 +363,10 @@ void setupCDTime()
       setupCdmTimeShow(value);
     }
     fs.poll();
+    if (fs.doubleClick()) {
+      endsetup = true;
+      return;
+    }
     if (fs.longPress())
     {
       EEPROM.write(0x01, value);
@@ -387,6 +407,10 @@ void setupBrightness()
       setupBrigthnessShow(value);
     }
     fs.poll();
+    if (fs.doubleClick()) {
+      endsetup = true;
+      return;
+    }
     if (fs.longPress())
     {
       bright = value;
@@ -428,6 +452,10 @@ void setupWarningTime()
       setupWarningTimeShow(value);
     }
     fs.poll();
+    if (fs.doubleClick()) {
+      endsetup = true;
+      return;
+    }
     if (fs.longPress())
     {
       warningtime = value;
@@ -450,14 +478,26 @@ void setupWarningTime()
 void doSetup()
 {
   color = BLUE;
+  endsetup = false;
+
+  // show menu text
+  display.clear();
+  display.setColon(false);
+  display.setSegments(MED, 4, 0);
+  delay(2000);
+  fs.poll();
   // setup display brightness
   setupBrightness();
+  if (endsetup) return;
   // Set counter mode
   setupMode();
+  if (endsetup) return;
   // now if cdm is selected, let's adjust the count down time
   setupCDTime();
+  if (endsetup) return;
   // setup the warning time
   setupWarningTime();
+  if (endsetup) return;
 }
 
 void showCdm(bool mode)

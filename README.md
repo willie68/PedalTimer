@@ -52,19 +52,21 @@ Start/Stop/Reset works the same as in ST mode. When running the LED will lit up 
 
 ## Configuration Mode
 
-To start the configuration mode simply press and hold the button until you see the first configurable entry (after showing firmware and mode) :
+To start the configuration mode simply press and hold the button on start until you see the menu entry (after showing firmware and mode) , or do a double click, if St or cd is stopped:
 
-![](images/image004.jpg)
+![](images/image011.jpg)
 
-for all steps in the configuration: single click means: next value, long press means: next Entry. The unit will always show the last configured value. if you can configure the value the LED will lit up blue. After the long press, the LED will be off and the configured value will be shown for 1 second. Than the display will show the next configuration value.
+for all steps in the configuration: single click means: next value, long press means: next Entry. The unit will always show the last configured value. if you can configure the value the LED will lit up blue. After the long press, the LED will be off and the configured value will be shown for 1 second. Than the display will show the next configuration value. On double click in every configuration you will exit the configuration without saving the actual config value.
 
 ### Brightness
+
+![](images/image004.jpg)
 
 First configuration is the display brightness. The value can range from 1..7. You will see the result only in normal operation modes. In configuration the brightness is always set to max. (So you can always see the display for configuration) 
 
 ### Operation Mode
 
-![](images/image005.jpg)![](images/image008.jpg)
+![](images/image005.jpg)  ![](images/image008.jpg)
 
 There are 2 modes of operation: Stopwatch, shown by St and Count down shown by cd.
 
@@ -80,8 +82,7 @@ Next you can configure the Countdown time in minutes. It ranges from 5 to 240 mi
 
 You can setup a warning time from 0..15 min. 0 disables the warning. 
 
-- St mode: the LED will lit up in RED (instead of green) if the elapsed time is longer than the warning time.
-- cd mode: the LED will lit up in RED (instead of green) if the remaining time is shorter than the warning time.
+- **St mode**: the LED will lit up in RED (instead of green) if the elapsed time is longer than the warning time.
+- **cd mode**: the LED will lit up in RED (instead of green) if the remaining time is shorter than the warning time.
 
-<u>2024 WK-Music</u> 
-
+<u>2024 WK-Music</u>
