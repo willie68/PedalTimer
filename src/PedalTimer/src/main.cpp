@@ -114,9 +114,9 @@ void showVersion()
 
 void afterSetup()
 {
-  #ifdef serial
+#ifdef serial
   color = GREEN;
-  #endif
+#endif
 
   outputConfig();
   display.clear();
@@ -128,9 +128,9 @@ void afterSetup()
 
 void setup()
 {
-  #ifdef serial
+#ifdef serial
   Serial.begin(115200);
-  #endif
+#endif
 
   setupPixel();
 
@@ -258,9 +258,9 @@ void showTime(int act)
 void showCdmTime(int ct)
 {
   int time = (cdmtime * 60) - int(ct);
-  #ifdef serial
+#ifdef serial
   Serial.println(time);
-  #endif
+#endif
   if ((time <= 90 * 60) && (time > -9 * 60))
   {
     showTime(long(time));
