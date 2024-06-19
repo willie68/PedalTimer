@@ -165,6 +165,8 @@ void loop()
     {
       doSetup();
       afterSetup();
+      actualSec = 0;
+      start = 0L;
     }
   }
   if (fs.longPress())
