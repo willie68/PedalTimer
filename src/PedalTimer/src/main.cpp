@@ -10,10 +10,11 @@
 #include <Adafruit_NeoPixel.h>
 
 // #define debug
+// #define serial
 
 // Version
 #define VS_MAJ 0
-#define VS_MIN 7
+#define VS_MIN 8
 // constants
 #define ON 1
 #define OFF 0
@@ -22,13 +23,20 @@
 #define DIO 3
 // Footswitch
 #define FS 8
+// RGB LED
+#define LED_PIN 5
 
 const uint8_t TTD[] = {SEG_F | SEG_G | SEG_E | SEG_D};
 const uint8_t STD[] = {SEG_A | SEG_F | SEG_G | SEG_C | SEG_D, SEG_F | SEG_G | SEG_E | SEG_D};
 const uint8_t CDD[] = {SEG_G | SEG_E | SEG_D, SEG_B | SEG_G | SEG_E | SEG_D | SEG_C};
 const uint8_t CPD[] = {SEG_G | SEG_E | SEG_D};
 const uint8_t MND[] = {SEG_G};
-const uint8_t MED[] = {SEG_A | SEG_F | SEG_E | SEG_B | SEG_C, SEG_A | SEG_F | SEG_G | SEG_E | SEG_D, SEG_G | SEG_E | SEG_C, SEG_C | SEG_E | SEG_D, };
+const uint8_t MED[] = {
+    SEG_A | SEG_F | SEG_E | SEG_B | SEG_C,
+    SEG_A | SEG_F | SEG_G | SEG_E | SEG_D,
+    SEG_G | SEG_E | SEG_C,
+    SEG_C | SEG_E | SEG_D,
+};
 
 // show the given time
 void showTime(int act);
@@ -51,7 +59,7 @@ void showCdmTime(int time);
 // write out the config via serial
 void outputConfig();
 
-Adafruit_NeoPixel pixel(1, 5, NEO_RGB + NEO_KHZ800);
+Adafruit_NeoPixel pixel(1, LED_PIN, NEO_RGB + NEO_KHZ800);
 TM1637Display display = TM1637Display(CLK, DIO);
 Switch fs = Switch(FS);
 
@@ -79,10 +87,10 @@ unsigned long alarmblk = 0;
 uint32_t color = GREEN;
 bool endsetup = false;
 
-void setupPixel() 
+void setupPixel()
 {
   pixel.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
-  pixel.setBrightness(7*8);
+  pixel.setBrightness(7 * 8);
   pixel.show();
 
   color = BLUE;
@@ -104,19 +112,25 @@ void showVersion()
   }
 }
 
-void afterSetup() {
-  outputConfig();
+void afterSetup()
+{
+  #ifdef serial
   color = GREEN;
+  #endif
+
+  outputConfig();
   display.clear();
   display.setBrightness(bright);
   pixel.setBrightness(bright * 8);
-  cdm ? showCdmTime(0) :showTime(0);
+  cdm ? showCdmTime(0) : showTime(0);
   led(OFF);
 }
 
 void setup()
 {
+  #ifdef serial
   Serial.begin(115200);
+  #endif
 
   setupPixel();
 
@@ -145,10 +159,12 @@ bool colon = false;
 void loop()
 {
   fs.poll();
-  if (fs.doubleClick()) {
-    if (!started) {
-       doSetup();
-       afterSetup();
+  if (fs.doubleClick())
+  {
+    if (!started)
+    {
+      doSetup();
+      afterSetup();
     }
   }
   if (fs.longPress())
@@ -198,7 +214,9 @@ void loop()
         toggled();
         display.setBrightness(7);
       }
-    } else {
+    }
+    else
+    {
       color = GREEN;
     }
     led(started);
@@ -240,7 +258,9 @@ void showTime(int act)
 void showCdmTime(int ct)
 {
   int time = (cdmtime * 60) - int(ct);
+  #ifdef serial
   Serial.println(time);
+  #endif
   if ((time <= 90 * 60) && (time > -9 * 60))
   {
     showTime(long(time));
@@ -317,7 +337,8 @@ void setupMode()
   do
   {
     fs.poll();
-    if (fs.doubleClick()) {
+    if (fs.doubleClick())
+    {
       endsetup = true;
       return;
     }
@@ -327,7 +348,7 @@ void setupMode()
       EEPROM.write(0x00, cdm ? 1 : 0);
       end = true;
     }
-    if (fs.singleClick())
+    else if (fs.singleClick())
     {
       value = !value;
       showCdm(value);
@@ -363,7 +384,8 @@ void setupCDTime()
       setupCdmTimeShow(value);
     }
     fs.poll();
-    if (fs.doubleClick()) {
+    if (fs.doubleClick())
+    {
       endsetup = true;
       return;
     }
@@ -373,7 +395,7 @@ void setupCDTime()
       cdmtime = value;
       end = true;
     }
-    if (fs.singleClick())
+    else if (fs.singleClick())
     {
       value += 5;
       setupCdmTimeShow(value);
@@ -407,7 +429,8 @@ void setupBrightness()
       setupBrigthnessShow(value);
     }
     fs.poll();
-    if (fs.doubleClick()) {
+    if (fs.doubleClick())
+    {
       endsetup = true;
       return;
     }
@@ -417,7 +440,7 @@ void setupBrightness()
       EEPROM.write(0x02, value);
       end = true;
     }
-    if (fs.singleClick())
+    else if (fs.singleClick())
     {
       value++;
       setupBrigthnessShow(value);
@@ -452,7 +475,8 @@ void setupWarningTime()
       setupWarningTimeShow(value);
     }
     fs.poll();
-    if (fs.doubleClick()) {
+    if (fs.doubleClick())
+    {
       endsetup = true;
       return;
     }
@@ -462,7 +486,7 @@ void setupWarningTime()
       EEPROM.write(0x03, value);
       end = true;
     }
-    if (fs.singleClick())
+    else if (fs.singleClick())
     {
       value++;
       setupWarningTimeShow(value);
@@ -488,16 +512,20 @@ void doSetup()
   fs.poll();
   // setup display brightness
   setupBrightness();
-  if (endsetup) return;
+  if (endsetup)
+    return;
   // Set counter mode
   setupMode();
-  if (endsetup) return;
+  if (endsetup)
+    return;
   // now if cdm is selected, let's adjust the count down time
   setupCDTime();
-  if (endsetup) return;
+  if (endsetup)
+    return;
   // setup the warning time
   setupWarningTime();
-  if (endsetup) return;
+  if (endsetup)
+    return;
 }
 
 void showCdm(bool mode)
