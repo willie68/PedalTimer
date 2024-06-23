@@ -2,6 +2,8 @@
 
 A small clock for your guitar pedal board, that counts up or down to measure the duration of songs or to time your performance when you are limited on time.
 
+![](images/pic001.jpg)
+
 The github project site: https://github.com/willie68/PedalTimer
 
 For schematic see wokwi project: https://wokwi.com/projects/400030668740998145
@@ -83,6 +85,39 @@ Next you can configure the Countdown time in minutes. It ranges from 5 to 240 mi
 You can setup a warning time from 0..15 min. 0 disables the warning. 
 
 - **St mode**: the LED will lit up in RED (instead of green) if the elapsed time is longer than the warning time.
+
 - **cd mode**: the LED will lit up in RED (instead of green) if the remaining time is shorter than the warning time.
+
+# Building our own version
+
+## BOM
+
+What you need:
+
+- arduino nano or compatible
+- footswitch spst (single pole single throw) german: einen Fußtaster.
+- 4x Digit TM1637 Display with  double point
+- a 5mm RGB WS2812b short head LED
+- a small SPST switch for manual input by hand
+- 3d printed case
+- 4 melting nuts M4 and 4 M4x9mm screws
+- chicken feed (which means: cables, solder and stuff like that)
+
+for 9V power
+
+- lumberg DC socket
+- 9V/5V converter
+
+## Building up
+
+Before you can start, if you have a nano, the display or any other component with pin heads, remove (desolder) them. In the case there is not enough room for that. Than build all up with short cables. Beware of the DC Socket. You have to solder it, after installing the socket. Because this is the only hardware part going from outside to inside. All others can be soldered before. Glue all the other parts into the case with  hot glue. For the RGB LED you can use super glue.  
+
+Than you are ready to program the nano. The project is build with VS Code and Platform.IO. Simply load the project into VS Code and than you can program the nano. Maybe you have to switch the version for your nano. I have build this up with `nanoatmega328new`  but some other nanos where sold with an older boot loader so you have to use `nanoatmega328`. You can switch this in the platformio.ini file.
+
+Later i will come up with some building images.
+
+## Schematics
+
+![](images/pedaltimer_v1.0_SCH_1.png)
 
 <u>2024 WK-Music</u>
