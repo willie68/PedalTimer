@@ -114,7 +114,11 @@ Before you can start, if you have a nano, the display or any other component wit
 
 Than you are ready to program the nano. The project is build with VS Code and Platform.IO. Simply load the project into VS Code and than you can program the nano. Maybe you have to switch the version for your nano. I have build this up with `nanoatmega328new`  but some other nanos where sold with an older boot loader so you have to use `nanoatmega328`. You can switch this in the platformio.ini file.
 
-Later i will come up with some building images.
+### building images
+
+![](images/pic002.jpg)
+
+Detail view of the power supply![](images/pic003.jpg)
 
 ## Schematics
 
